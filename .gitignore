@@ -34,3 +34,6 @@ vignettes/*.pdf
 
 # Deviation data
 deviation_data.*
+
+# Produced plots
+plots/
