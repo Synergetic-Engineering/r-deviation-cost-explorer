@@ -33,7 +33,7 @@ vignettes/*.pdf
 *.knit.md
 
 # Deviation data
-deviation_data.*
+data/
 
 # Produced plots
 plots/
