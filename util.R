@@ -1,18 +1,5 @@
-library(shiny)
-library(shinyTime)
-
-library(tidyverse)
-library(ggplot2)
-library(lubridate)
-
-# --------------------- #
-# Read and process data #
-# --------------------- #
-
-# Read data and order by time
-data <- read_csv("data/deviation_data.csv") %>%
-  arrange(UnixTime) %>%
-  mutate(datetime = as_datetime(UnixTime))
+import_package("tidyverse", attach = TRUE)
+import_package("lubridate", attach = TRUE)
 
 # ------------------------------------------ #
 # Utility functions for extracting from data #
@@ -77,29 +64,4 @@ validate <- function(variable_data) {
   stopifnot("datetime" %in% colnames(variable_data))
   stopifnot(is.timepoint(variable_data$datetime))
   
-}
-
-# ------------------ #
-# Plotting functions #
-# ------------------ #
-
-# Plot a bar chart of the summative deviation cost for each day compared to the average (for each day)
-plot_bars_cmp <- function(data) {
-  validate(data)
-  
-  bar_data <- data %>%
-    group_by(day = as.Date(datetime)) %>%
-    summarise(cost = sum(deviation_cost, na.rm = TRUE)) %>%
-    mutate(cost_diff = mean(cost, na.rm = TRUE) - cost)
-  stopifnot(!is.nan(bar_data$cost_diff))
-  
-  
-  ggplot(data = bar_data) +
-    geom_col(mapping = aes(x = day, y = cost_diff,
-                           fill = ifelse(cost_diff > 0, "pos", "neg"))) +
-    # Colour positive costs red and negative costs green
-    scale_fill_manual(values = c("pos" = "red", "neg" = "green")) +
-    guides(fill = "none") +
-    scale_x_date(date_breaks = "2 days") +
-    labs(x = "day", y = "cost difference", title = "Cost Average Difference vs. Day")
 }
