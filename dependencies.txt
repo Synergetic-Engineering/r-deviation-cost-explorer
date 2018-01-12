@@ -1,0 +1,11 @@
+# CRAN packages
+
+ggplot2
+tidyverse
+lubridate
+shiny
+shinyTime
+
+# GitHub packages
+
+klmr/modules
