@@ -14,8 +14,7 @@ ui <- shinyUI(fluidPage(
                          timeInput("time_2", "Time #2", value = strptime("12:34:56", "%T")), 
                          #textInput("my_output"),
                          selectInput("variable", "Component: ",
-                                     c("Condenser" = "turb.cond.thermalConductance.target",
-                                       "Generator" = "turb.gen.c2out.energyFlow.use")),
+                                     u$get_variable_names(r$data)),
                          actionButton("display", "Submit"),
                          textOutput("Status"),
                          plotOutput("plot")

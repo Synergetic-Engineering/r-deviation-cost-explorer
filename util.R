@@ -77,3 +77,16 @@ validate <- function(variable_data) {
   stopifnot(is.timepoint(variable_data$datetime))
   
 }
+
+# Get all deviated variable names from data
+#
+# Given data, returns a vector of unique deviated variable names
+get_variable_names <- function(data) {
+  stopifnot(is.data.frame(data))
+  stopifnot("deviated_variable" %in% colnames(data))
+  
+  data[["deviated_variable"]] %>%
+    na.omit() %>%
+    unique() %>%
+    return()
+}
