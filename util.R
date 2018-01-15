@@ -19,6 +19,10 @@ extract <- function(data, variable) {
   stopifnot(is.character(variable))
   stopifnot(length(variable) == 1)
   
+  if("unit" %in% colnames(data) & !length(unique(data$unit)) == 1) {
+    stop("Can't handle multiple units")
+  }
+  
   if(!variable %in% data[["deviated_variable"]]) {
     stop(paste0("Variable not found: ", variable))
   }
