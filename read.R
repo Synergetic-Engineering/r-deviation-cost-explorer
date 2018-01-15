@@ -1,16 +1,12 @@
-import_package("tidyverse", attach = TRUE)
-import_package("lubridate", attach = TRUE)
+library(tidyverse)
+library(lubridate)
 
 # ------------------- #
 # Read converted data #
 # --------------------#
 
-# Read data and order by time
-data <- read_csv("data/deviation_data.csv") %>%
-  mutate(datetime = as_datetime(UnixTime))
-
-# Read expanded data with no mangled columns
-data2 <- read_csv("data/converted_data.csv")
+# Read expanded data with no mangled columns (not ordered)
+data <- read_csv("data/converted_data.csv")
 
 # ------------------------------- #
 # Read, process, and convert data #
@@ -59,7 +55,7 @@ expand <- function(data) {
   
   cost_regex <- ",measure=blr\\.comb\\.c1in\\.massFlow\\.cost$"
 
-  colnames(data) %>% 
+  colnames(data) %>%
     keep(function(x) str_detect(x, cost_regex)) %>% # Remove non-cost columns
     map(function(x) select(data, !!x)) %>% # Convert column names to data frames containing that column
     map(unpack) %>% # Unpack each single-column data frame into a multi-column one

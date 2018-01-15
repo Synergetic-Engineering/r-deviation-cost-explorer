@@ -1,5 +1,5 @@
-import_package("tidyverse", attach = TRUE)
-import_package("lubridate", attach = TRUE)
+library(tidyverse)
+library(lubridate)
 
 # ------------------------------------------ #
 # Utility functions for extracting from data #
@@ -11,24 +11,36 @@ import_package("lubridate", attach = TRUE)
 # containing `datetime`, `base_cost`, and `deviated_cost` for that component.
 extract <- function(data, variable) {
   stopifnot(is.data.frame(data))
+  stopifnot("value" %in% colnames(data))
+  stopifnot("measure" %in% colnames(data))
+  stopifnot("step" %in% colnames(data))
+  stopifnot("deviated_variable" %in% colnames(data))
   stopifnot(is.character(variable))
   stopifnot(length(variable) == 1)
   
-  base_cost_col <- "corp=ambergilbertenergy,site=ambergilbert,unit=unit1,module=deviation/unit,step=base,io=output,measure=blr.comb.c1in.massFlow.cost"
-  
-  # Find deviated cost column for given variable
-  var_col_regex <- str_c("deviated_variable=", variable, ",measure=blr\\.comb\\.c1in\\.massFlow\\.cost$")
-  idx <- str_which(colnames(data), var_col_regex)
-  if (length(idx) == 0) {
-    stop(str_c("No such variable found \"", variable, "\""))
+  if(!variable %in% data[["deviated_variable"]]) {
+    stop(paste0("Variable not found: ", variable))
   }
-  if (length(idx) > 1) {
-    stop(str_c("Multiple matches found for \"", variable, "\": ", str_c(idx, collapse = ", ")))
-  }
-  deviated_cost_col <- colnames(data)[idx]
   
-  data %>%
-    select(datetime, base_cost = !!base_cost_col, deviated_cost = !!deviated_cost_col) %>%
+  COST_MEASURE <- 'blr.comb.c1in.massFlow.cost'
+  
+  # datetime, base_cost
+  base_data <- data %>%
+    filter(measure == COST_MEASURE & step == 'base') %>%
+    select(datetime, value) %>%
+    rename(base_cost = value)
+  
+  # datetime, deviated_cost
+  variable_data <- data %>%
+    filter(measure == COST_MEASURE & step == 'deviation' &
+             deviated_variable == variable) %>%
+    select(datetime, value) %>%
+    rename(deviated_cost = value)
+  
+  # datetime, base_cost, deviated_cost
+  base_data %>%
+    left_join(variable_data, by = "datetime") %>%
+    arrange(datetime) %>%
     return()
 }
 

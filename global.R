@@ -1,8 +1,6 @@
-# Use import() from kmlr/modules
-library(modules)
-
-import_package("shiny", attach = TRUE)
-import_package("shinyTime", attach = TRUE)
+library(modules) # Use import() from kmlr/modules
+library(shiny)
+library(shinyTime)
 
 r <- import("read")
 u <- import("util")

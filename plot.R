@@ -1,4 +1,4 @@
-import_package("ggplot2", attach = TRUE)
+library(ggplot2)
 
 u <- import("util")
 validate <- u$validate
