@@ -8,7 +8,8 @@ library(lubridate)
 # Extract deviation variable table from data
 #
 # Given data, and a deviated variable (as a character), returns a table
-# containing `datetime`, `base_cost`, and `deviated_cost` for that component.
+# containing `datetime`, `base_cost`, `deviated_cost`, `deviation_cost` for
+# that component.
 extract <- function(data, variable) {
   stopifnot(is.data.frame(data))
   stopifnot("value" %in% colnames(data))
@@ -40,6 +41,7 @@ extract <- function(data, variable) {
   # datetime, base_cost, deviated_cost
   base_data %>%
     left_join(variable_data, by = "datetime") %>%
+    process_dev() %>%
     arrange(datetime) %>%
     return()
 }
@@ -48,6 +50,7 @@ extract <- function(data, variable) {
 #
 # Expects table with `base_cost` and `deviated_cost`.
 # Returns new table with `deviation_cost`.
+# Called by extract()
 process_dev <- function(variable_data) {
   stopifnot(is.data.frame(variable_data))
   stopifnot("base_cost" %in% colnames(variable_data))

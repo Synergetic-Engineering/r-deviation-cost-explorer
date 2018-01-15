@@ -8,7 +8,7 @@ validate <- u$validate
 # ------------------ #
 
 condenser_example <- function() {
-  data %>% extract("turb.cond.thermalConductance.target") %>% process_dev() %>% plot_bars_cmp()
+  data %>% extract("turb.cond.thermalConductance.target") %>% plot_bars_cmp()
 }
 
 # Plot deviated cost and baseline cost together
