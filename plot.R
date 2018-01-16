@@ -55,7 +55,7 @@ plot_bars_cmp <- function(data) {
   validate(data)
   
   bar_data <- data %>%
-    group_by(day = as.Date(datetime)) %>%
+    group_by(day = floor_date(datetime, "day")) %>%
     summarise(cost = sum(deviation_cost, na.rm = TRUE)) %>%
     mutate(cost_diff = mean(cost, na.rm = TRUE) - cost)
   stopifnot(!is.nan(bar_data$cost_diff))
@@ -67,6 +67,6 @@ plot_bars_cmp <- function(data) {
     # Colour positive costs red and negative costs green
     scale_fill_manual(values = c("pos" = "red", "neg" = "green")) +
     guides(fill = "none") +
-    scale_x_date(date_breaks = "2 days") +
+    scale_x_datetime(date_breaks = "2 days", labels=(function(d) { format(d, format = "%Y-%m-%d") })) +
     labs(x = "day", y = "cost difference", title = "Cost Average Difference vs. Day")
 }

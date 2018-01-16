@@ -18,8 +18,9 @@ server <- shinyServer(function(input, output, session) {
   get_dates <- function(id) {
     plot_brush <- names(id)$plot_brush
     toDate <- function(d) {
-      d %>% as.numeric() %>% round(1) %>% as.Date(origin = "1970-01-01")
+      d %>% as.numeric() %>% as_datetime()
     }
+    
     start_date <- toDate(input[[plot_brush]]$xmin)
     end_date <- toDate(input[[plot_brush]]$xmax)
     
@@ -42,7 +43,11 @@ server <- shinyServer(function(input, output, session) {
     io <- names(id)
     
     output[[io$plot]] <- renderPlot({
-      r$data %>% u$extract(input[[io$variable]]) %>% p$plot_bars_cmp()
+      r$data %>%
+        # Extract deviated cost data for given variable
+        u$extract(input[[io$variable]]) %>%
+        # Call selected plotting function
+        p[[input$plot_type]]()
     })
 
     output[[io$status]] <- renderText({
@@ -65,7 +70,7 @@ server <- shinyServer(function(input, output, session) {
   })
   
   output$comparison <- renderText({
-    avg_cost1() - avg_cost2()
+    paste0("Difference of Average Costs: ", avg_cost1() - avg_cost2())
   })
   
 })
