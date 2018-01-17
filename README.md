@@ -2,7 +2,7 @@
 
 RStudio / Shiny app for exploring SentientSystem deviation analysis data
 
-# Installation
+## Installation
 
 1. After cloning, acquire the deviation data (`converted_data.csv`) and save it under the `data/` folder.
 
