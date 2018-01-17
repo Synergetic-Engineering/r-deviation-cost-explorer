@@ -11,6 +11,58 @@ condenser_example <- function() {
   data %>% extract("turb.cond.thermalConductance.target") %>% plot_bars_cmp()
 }
 
+# Plot deviation cost
+plot_deviation <- function(data, color) {
+  validate(data)
+  stopifnot(is.character(color))
+  
+  ggplot(data = data) +
+    geom_line(mapping = aes(x = datetime, y = deviation_cost), color = color)
+}
+
+# Plot deviation cost for two datasets, joined on time
+plot_deviation_two <- function(data1, data2) {
+  validate(data1)
+  validate(data2)
+  
+  # Fill up data2 with NAs to make it as large as data1
+  # or vice verca
+  if (nrow(data1) != nrow(data2)) {
+    NAs <- rep(NA, times = abs(nrow(data1) - nrow(data2)))
+    
+    if (nrow(data1) > nrow(data2)) {
+      data2 <- reduce(NAs, rbind, .init = data2)
+      
+      # Use datetime from the larger set
+      data1 <- data1 %>%
+        select(datetime, deviation_cost) %>%
+        rename(deviation_cost.x = deviation_cost)
+      data2 <- data2 %>%
+        select(deviation_cost) %>%
+        rename(deviation_cost.y = deviation_cost)
+    }
+    else {
+      data1 <- reduce(NAs, rbind, .init = data1)
+      
+      # Use datetime from the larger set
+      data1 <- data1 %>%
+        select(deviation_cost) %>%
+        rename(deviation_cost.x = deviation_cost)
+      data2 <- data2 %>%
+        select(datetime, deviation_cost) %>%
+        rename(deviation_cost.y = deviation_cost)
+    }
+  }
+  stopifnot(nrow(data1) == nrow(data2))
+  
+  combined_data <- bind_cols(data1, data2)
+  
+  ggplot(data = combined_data) +
+    geom_line(mapping = aes(x = datetime, y = deviation_cost.x), colour = "red") +
+    geom_line(mapping = aes(x = datetime, y = deviation_cost.y), colour = "blue") +
+    labs(y = "deviation cost")
+}
+
 # Plot deviated cost and baseline cost together
 plot_deviated_baseline <- function(data) {
   validate(data)
