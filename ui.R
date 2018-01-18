@@ -5,7 +5,8 @@ ui <- shinyUI(fluidPage(
   fluidRow(
     wellPanel(
       selectInput("plot_type", "Plot Type: ",
-                  c("Line Chart" = 'line_chart'))
+                  c("Line Chart" = "line_chart",
+                    "Bar Chart" = "bar_chart"))
     )
   ),
   

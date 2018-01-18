@@ -174,3 +174,30 @@ plot_bars_cmp_two <- function(variable1, variable2, colors = c("red", "blue")) {
     scale_x_datetime(date_breaks = "2 days", labels = partial(format, format = "%Y-%m-%d")) +
     labs(x = "day", y = "cost difference", title = "Cost Average Difference vs. Day")
 }
+
+# ------------- #
+# Plot Registry #
+# ------------- #
+
+# List of plot functions, each with a singular and compartive
+# version, for plotting one and two variables, respectively
+registry <- list(
+  "line_chart" = list(
+    "singular" = plot_deviation,
+    "comparative" = plot_deviation_two
+  ),
+  "bar_chart" = list(
+    "singular" = plot_bars_cmp,
+    "comparative" = plot_bars_cmp_two
+  )
+)
+
+# Get plotting function of one variable from plot registry
+plot_one <- function(plot_name, plot_registry = registry) {
+  plot_registry[[plot_name]]$singular
+}
+
+# Get plotting function of two variables from plot registry
+plot_two <- function(plot_name, plot_registry = registry) {
+  plot_registry[[plot_name]]$comparative
+}
