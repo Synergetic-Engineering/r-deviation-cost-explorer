@@ -1,3 +1,4 @@
+library(modules)
 library(ggplot2)
 
 u <- import("util")
@@ -120,5 +121,42 @@ plot_bars_cmp <- function(data) {
     scale_fill_manual(values = c("pos" = "red", "neg" = "green")) +
     guides(fill = "none") +
     scale_x_datetime(date_breaks = "2 days", labels=(function(d) { format(d, format = "%Y-%m-%d") })) +
+    labs(x = "day", y = "cost difference", title = "Cost Average Difference vs. Day")
+}
+
+plot_bars_cmp_two <- function(variable1, variable2, colors = c("red", "blue")) {
+  validate(variable1)
+  validate(variable2)
+  stopifnot(length(colors) == 2 & is.character(colors))
+  
+  WIDTH <- 0.5
+  
+  # Group by day and compute cost average difference
+  difference <- function(variable) {
+    variable %>%
+      group_by(day = floor_date(datetime, "day")) %>%
+      summarise(cost = sum(deviation_cost, na.rm = TRUE)) %>%
+      mutate(cost_diff = mean(cost, na.rm = TRUE) - cost)
+  }
+  
+  variable1 <- variable1 %>%
+    difference() %>%
+    add_column(variable = "1")
+  
+  variable2 <- variable2 %>%
+    difference() %>%
+    add_column(variable = "2")
+  
+  bar_data <- bind_rows(variable1, variable2)
+  
+  ggplot(data = bar_data, mapping = aes(day, cost_diff, group = variable)) +
+    geom_col(mapping = aes(fill = variable),
+             position = "dodge",
+             # Must compute width manually else bars do not show up
+             width = resolution(as.double(bar_data$day), FALSE) * WIDTH) +
+    scale_fill_manual(values = colors) +
+    # Suppress legend
+    guides(fill = "none") +
+    scale_x_datetime(date_breaks = "2 days", labels = partial(format, format = "%Y-%m-%d")) +
     labs(x = "day", y = "cost difference", title = "Cost Average Difference vs. Day")
 }
