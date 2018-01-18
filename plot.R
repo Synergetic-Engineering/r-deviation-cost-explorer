@@ -21,6 +21,23 @@ plot_deviation <- function(data, color) {
     geom_line(mapping = aes(x = datetime, y = deviation_cost), color = color)
 }
 
+# Fill data up to n rows with NAs
+# If n is less than the number of rows in the data, just returns the data
+fill <- function(variable_data, n) {
+  validate(variable_data)
+  stopifnot(is.numeric(n))
+  
+  gap <- n - nrow(variable_data)
+  
+  if (gap <= 0) {
+    return(variable_data)
+  }
+  else {
+    NAs <- rep(NA, times = gap)
+    return(reduce(NAs, rbind, .init = variable_data))
+  }
+}
+
 # Plot deviation cost for two datasets, joined on time
 plot_deviation_two <- function(data1, data2) {
   validate(data1)
@@ -28,31 +45,28 @@ plot_deviation_two <- function(data1, data2) {
   
   # Fill up data2 with NAs to make it as large as data1
   # or vice verca
-  if (nrow(data1) != nrow(data2)) {
-    NAs <- rep(NA, times = abs(nrow(data1) - nrow(data2)))
+  size <- max(nrow(data1), nrow(data2))
+  if (nrow(data1) >= nrow(data2)) {
+    data2 <- fill(data2, size)
     
-    if (nrow(data1) > nrow(data2)) {
-      data2 <- reduce(NAs, rbind, .init = data2)
-      
-      # Use datetime from the larger set
-      data1 <- data1 %>%
-        select(datetime, deviation_cost) %>%
-        rename(deviation_cost.x = deviation_cost)
-      data2 <- data2 %>%
-        select(deviation_cost) %>%
-        rename(deviation_cost.y = deviation_cost)
-    }
-    else {
-      data1 <- reduce(NAs, rbind, .init = data1)
-      
-      # Use datetime from the larger set
-      data1 <- data1 %>%
-        select(deviation_cost) %>%
-        rename(deviation_cost.x = deviation_cost)
-      data2 <- data2 %>%
-        select(datetime, deviation_cost) %>%
-        rename(deviation_cost.y = deviation_cost)
-    }
+    # Use datetime from the larger set
+    data1 <- data1 %>%
+      select(datetime, deviation_cost) %>%
+      rename(deviation_cost.x = deviation_cost)
+    data2 <- data2 %>%
+      select(deviation_cost) %>%
+      rename(deviation_cost.y = deviation_cost)
+  }
+  else {
+    data1 <- fill(data1, size)
+    
+    # Use datetime from the larger set
+    data1 <- data1 %>%
+      select(deviation_cost) %>%
+      rename(deviation_cost.x = deviation_cost)
+    data2 <- data2 %>%
+      select(datetime, deviation_cost) %>%
+      rename(deviation_cost.y = deviation_cost)
   }
   stopifnot(nrow(data1) == nrow(data2))
   
