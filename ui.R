@@ -13,13 +13,13 @@ ui <- shinyUI(fluidPage(
   fluidRow(
     column(6,
       selectInput("variable1", "Component 1: ", u$get_variable_names(r$data)),
-      textOutput("status1"),
-      plotOutput("plot1", brush = brushOpts("plot_brush1", direction = "x"))
+      plotOutput("plot1", brush = brushOpts("plot_brush1", direction = "x")),
+      wellPanel(textOutput("status1"))
     ),
     column(6,
       selectInput("variable2", "Component 2: ", u$get_variable_names(r$data)),
-      textOutput("status2"),
-      plotOutput("plot2", brush = brushOpts("plot_brush2", direction = "x"))
+      plotOutput("plot2", brush = brushOpts("plot_brush2", direction = "x")),
+      wellPanel(textOutput("status2"))
     )
   ),
   

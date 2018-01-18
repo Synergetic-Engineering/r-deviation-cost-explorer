@@ -52,8 +52,8 @@ server <- shinyServer(function(input, output, session) {
 
     output[[io$status]] <- renderText({
       dates <- get_dates(id)
-      paste0("Start date: ", dates[0], " - ",
-             "End date: ", dates[1], " - ",
+      paste0("Start date: ", dates[1], " - ",
+             "End date: ", dates[2], " - ",
              "Average cost: ", calc_average(id))
     })
   }
