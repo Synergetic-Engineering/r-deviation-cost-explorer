@@ -8,9 +8,18 @@ library(lubridate)
 # Read expanded data with no mangled columns (not ordered)
 data <- read_csv("data/converted_data.csv")
 
+# Read decomposed column data (with no values)
+column_data <- read_csv("data/decomposition.csv")
+
 # ------------------------------- #
 # Read, process, and convert data #
 # ------------------------------- #
+
+# Regenerate data (WARNING: May take a long time!)
+regenerate <- function(data_csv = "data/deviation_data.csv") {
+  decompose_columns(data_csv, "data/decomposition.csv")
+  convert(data_csv)
+}
 
 # Unpack a column
 #
@@ -74,4 +83,61 @@ convert <- function(data_csv) {
     expand()
   
   write.csv(data, file = "data/converted_data.csv", row.names = FALSE)
+}
+
+# ------------------ #
+# Parse column names #
+# ------------------ #
+
+# Function: parse_measure 
+# Purpose: decompose measure or deviated_variable into elements  
+# input: 
+#   df: data frame with 2 columns: names & values
+#   meas_name: name of the measurement to be decomposed
+# return: data frame if measurement is found or NA
+parse_measure <- function(df, name = "measure", prefix = "m") {
+  m <- df$values[df$names == name]
+  if(!identical(m, character(0))){
+    values <- unlist(strsplit(x = m, "\\."))
+    names <- sapply(1:length(values), function(x) paste0(prefix, "_", x))
+    data.frame(names, values, stringsAsFactors = FALSE)
+  } else {
+    NULL
+  } 
+}
+
+# parse_column_name: Decomposes an aggregated column name into a data frame containing the various elements (with names) 
+# Inputs: 
+#   full_name: original aggregated column name (e.g "corp=amber,site=ag,unit=unit1,module=dev/unit,step=base,io=output,measure=blr.comb.c1in.massFlow.cost)  
+#   new_name: new column name of returned data frame
+# Output: returns data frame with column of variables names and another column with their values 
+# Notes: the measure is also decomposed
+parse_column_name <- function(col_name) {
+  # split up parts separated by commas, then bits separated by '='
+  parts <- unlist(strsplit(x = col_name, ","))
+  bits <- apply(as.array(parts), 1, function(x) unlist(strsplit(x, "=")))
+  
+  # construct as data frame 
+  names  <- apply(bits, 2, function(x) x[1])
+  values <- apply(bits, 2, function(x) x[2])
+  df <- data.frame (names, values, stringsAsFactors = FALSE)
+  
+  # add decomposition for both measure and deviated_variable (where applicable), then transpose and convert back into data frame 
+  df <- df %>% bind_rows(parse_measure(., "deviated_variable"          , "d")) %>%
+    bind_rows(parse_measure(., "measure"                    , "m")) %>% 
+    t() %>% data.frame(stringsAsFactors = FALSE)
+  
+  # add names to existing data frame
+  colnames(df) <- df["names",]      # add column names 
+  df <- df[-1,]               # drop first row (containing column names)
+  df
+}
+
+# Extract just the column names from the data and write to a csv (not pure!)
+decompose_columns <- function(data_csv = "data/deviation_data.csv", output_file = "data/decomposition.csv") {
+  # read deviation data from file & extract list of column names
+  dev_data <- read.csv2(data_csv, sep = ",", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE) 
+  col_names <- (colnames(dev_data))[-1]
+  
+  col_names %>% sapply(function(x) parse_column_name(x)) %>% bind_rows() %>% write.csv(output_file, row.names = FALSE)
 }
