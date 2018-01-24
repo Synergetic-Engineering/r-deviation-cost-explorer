@@ -5,8 +5,8 @@ ui <- shinyUI(fluidPage(
   fluidRow(
     wellPanel(
       selectInput("plot_type", "Plot Type: ",
-                  c("Bar Chart" = 'plot_bars_cmp',
-                    "Line Chart" = 'plot_deviated_baseline'))
+                  c("Line Chart" = "line_chart",
+                    "Bar Chart" = "bar_chart"))
     )
   ),
   
@@ -20,6 +20,12 @@ ui <- shinyUI(fluidPage(
       selectInput("variable2", "Component 2: ", u$get_variable_names(r$data)),
       plotOutput("plot2", brush = brushOpts("plot_brush2", direction = "x")),
       wellPanel(textOutput("status2"))
+    )
+  ),
+  
+  fluidRow(
+    wellPanel(
+      plotOutput("reference_plot")
     )
   ),
   

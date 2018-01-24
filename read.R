@@ -40,7 +40,8 @@ unpack <- function(col) {
   
   unpacked_table <- keyvalues %>%
     reduce(add_col, .init = col) %>%
-    rename(value = !!header)
+    rename(value = !!header) %>%
+    mutate(value = as.numeric(value))
   
   return(unpacked_table)
 }
@@ -53,10 +54,8 @@ expand <- function(data) {
   stopifnot(is.data.frame(data))
   stopifnot("datetime" %in% colnames(data))
   
-  cost_regex <- ",measure=blr\\.comb\\.c1in\\.massFlow\\.cost$"
-
   colnames(data) %>%
-    keep(function(x) str_detect(x, cost_regex)) %>% # Remove non-cost columns
+    keep(~ str_detect(.x, ",")) %>% # Remove `datetime`, `UnixTime` column names
     map(function(x) select(data, !!x)) %>% # Convert column names to data frames containing that column
     map(unpack) %>% # Unpack each single-column data frame into a multi-column one
     map(function(x) bind_cols(x, select(data, datetime))) %>% # Add back a datetime column to each

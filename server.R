@@ -39,15 +39,23 @@ server <- shinyServer(function(input, output, session) {
   }
   
   # Register a plot + variable + selector input/outputs
-  register <- function(id) {
+  register <- function(id, color) {
     io <- names(id)
     
     output[[io$plot]] <- renderPlot({
-      r$data %>%
-        # Extract deviated cost data for given variable
-        u$extract(input[[io$variable]]) %>%
-        # Call selected plotting function
-        p[[input$plot_type]]()
+      # Extract deviated cost data for given variable
+      variable_data <- r$data %>% u$extract(input[[io$variable]])
+      
+      # Call chosen plotting function from input
+      plot <- p$plot_one(input$plot_type)
+      tryCatch({
+        plot(variable_data, color)
+      },
+      error = function(e) {
+        # Try without color
+        plot(variable_data)
+      })
+
     })
 
     output[[io$status]] <- renderText({
@@ -60,13 +68,23 @@ server <- shinyServer(function(input, output, session) {
   
 
   
-  register("1")
-  register("2")
+  register("1", "red")
+  register("2", "blue")
   avg_cost1 <- reactive({
     calc_average("1")
   })
   avg_cost2 <- reactive({
     calc_average("2")
+  })
+  
+  output$reference_plot <- renderPlot({
+    variable1 <- names("1")$variable
+    variable2 <- names("2")$variable
+    d1 <- r$data %>% u$extract(input[[variable1]]) %>% u$filter_by_date(get_dates("1"))
+    d2 <- r$data %>% u$extract(input[[variable2]]) %>% u$filter_by_date(get_dates("2"))
+    plot <- p$plot_two(input$plot_type)
+    
+    plot(d1, d2)
   })
   
   output$comparison <- renderText({
