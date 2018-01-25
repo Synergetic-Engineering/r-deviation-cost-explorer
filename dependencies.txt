@@ -1,10 +1,14 @@
 # CRAN packages
 
+devtools
 ggplot2
 tidyverse
 lubridate
 shiny
 shinyTime
+data.tree
+treemap
+yaml
 
 # GitHub packages
 

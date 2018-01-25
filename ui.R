@@ -2,6 +2,26 @@ ui <- shinyUI(fluidPage(
   
   titlePanel("Cost Difference"),
   
+  # Dropdown selections
+  fluidRow(
+    column(6,
+      wellPanel(
+        uiOutput('unit1'),
+        uiOutput('d11'),
+        uiOutput('deviated_variable1'),
+        uiOutput('measure1')
+        # TODO: Incorporate deviated_variable
+      )),
+    column(6,
+      wellPanel(
+         uiOutput('unit2'),
+         uiOutput('d12'),
+         uiOutput('deviated_variable2'),
+         uiOutput('measure2')
+         # TODO: Incorporate deviated_variable
+      ))
+  ),
+  
   fluidRow(
     wellPanel(
       selectInput("plot_type", "Plot Type: ",
@@ -12,12 +32,10 @@ ui <- shinyUI(fluidPage(
   
   fluidRow(
     column(6,
-      selectInput("variable1", "Component 1: ", u$get_variable_names(r$data)),
       plotOutput("plot1", brush = brushOpts("plot_brush1", direction = "x")),
       wellPanel(textOutput("status1"))
     ),
     column(6,
-      selectInput("variable2", "Component 2: ", u$get_variable_names(r$data)),
       plotOutput("plot2", brush = brushOpts("plot_brush2", direction = "x")),
       wellPanel(textOutput("status2"))
     )

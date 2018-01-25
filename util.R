@@ -121,3 +121,17 @@ filter_by_date <- function(variable_data, dates) {
   
   return(filter(variable_data, datetime > dates[1] & datetime < dates[2]))
 }
+
+# ---------------- #
+# Column functions #
+# ---------------- #
+
+# Function: get_children_names --> returns the names of the direct decendants for the given node
+get_childen_names <- function(tree) {
+  n <- tree$count
+  if(is.null(n)) 
+    return(NULL)
+  
+  x <- sapply(1:n, function(x, y) y$children[[x]]$name, y = tree)
+  x
+}

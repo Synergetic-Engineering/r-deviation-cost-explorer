@@ -3,15 +3,23 @@ server <- shinyServer(function(input, output, session) {
   # Get the input/output names of a plot
   #
   # Return input/output names of a given plot as a list with
-  # plot, plot_brush, variable, status. Given an id.
+  # plot, plot_brush, variable, status and input selectors.
+  # Given an id.
   names <- function(id) {
-    name_of <- function(el, id) { paste0(el, id) }
-    return(list(plot = name_of("plot", id),
-                plot_brush = name_of("plot_brush", id),
-                variable = name_of("variable", id),
-                status = name_of("status", id)
+    name_of <- function(el) { paste0(el, id) }
+    return(list(plot = name_of("plot"),
+                plot_brush = name_of("plot_brush"),
+                variable = name_of("variable"),
+                status = name_of("status"),
+                
+                selectors = list(
+                  unit = name_of("unit"),
+                  d1 = name_of("d1"),
+                  deviated_variable = name_of("deviated_variable"),
+                  measure = name_of("measure")
                 )
-           )
+            )
+    )
   }
   
   # Get date range as a vector pair: c(<start>, <end>)
@@ -27,12 +35,22 @@ server <- shinyServer(function(input, output, session) {
     return(c(start_date, end_date))
   }
   
+  # Get deviated variable (with d1 suffix) as a string from selectors
+  get_deviated_variable <- function(id) {
+    d1 <- input[[names(id)$selectors$d1]]
+    dev_var <- input[[names(id)$selectors$deviated_variable]]
+    
+    deviated_variable <- paste(d1, dev_var, sep = ".")
+    
+    return(deviated_variable)
+  }
+  
   # Calculate average over selection
   calc_average <- function(id) {
-    variable <- names(id)$variable
+    variable <- get_deviated_variable(id)
     
     r$data %>%
-      u$extract(input[[variable]]) %>%
+      u$extract(variable) %>%
       u$filter_by_date(get_dates(id)) %>%
       u$get_average_cost() %>%
       return()
@@ -41,10 +59,45 @@ server <- shinyServer(function(input, output, session) {
   # Register a plot + variable + selector input/outputs
   register <- function(id, color) {
     io <- names(id)
+    sel <- io$selectors
     
+    # Deviated variable selection
+    output[[sel$unit]] = renderUI({
+      selectInput(sel$unit, 'Unit', u$get_childen_names(r$tree))
+    })
+    
+    output[[sel$d1]] = renderUI({
+      message("renderUI:d1")
+      
+      if (!is.null(input[[sel$unit]])) {
+        selectInput(sel$d1, 'D1 (component)',
+                    u$get_childen_names(
+                      r$tree[[ input[[sel$unit]] ]]))
+      }
+    })
+    
+    output[[sel$deviated_variable]] = renderUI({
+      message("renderUI:deviated variable")
+      if (!is.null(input[[sel$d1]])) {
+        selectInput(sel$deviated_variable, 'Deviated Variable',
+                    u$get_childen_names(
+                      r$tree[[ input[[sel$unit]] ]][[ input[[sel$d1]] ]]))
+      }
+    })
+    
+    output[[sel$measure]] = renderUI({
+      message("renderUI:measure")
+      if (!is.null(input[[sel$deviated_variable]])) {
+        selectInput(sel$measure, 'Measure',
+                    u$get_childen_names(
+                      r$tree[[ input[[sel$unit]] ]][[ input[[sel$d1]] ]][[ input[[sel$deviated_variable]] ]]))
+      }
+    })
+    
+    # Plotting
     output[[io$plot]] <- renderPlot({
       # Extract deviated cost data for given variable
-      variable_data <- r$data %>% u$extract(input[[io$variable]])
+      variable_data <- r$data %>% u$extract(get_deviated_variable(id))
       
       # Call chosen plotting function from input
       plot <- p$plot_one(input$plot_type)
@@ -58,6 +111,7 @@ server <- shinyServer(function(input, output, session) {
 
     })
 
+    # Statistics
     output[[io$status]] <- renderText({
       dates <- get_dates(id)
       paste0("Start date: ", dates[1], " - ",
@@ -78,10 +132,10 @@ server <- shinyServer(function(input, output, session) {
   })
   
   output$reference_plot <- renderPlot({
-    variable1 <- names("1")$variable
-    variable2 <- names("2")$variable
-    d1 <- r$data %>% u$extract(input[[variable1]]) %>% u$filter_by_date(get_dates("1"))
-    d2 <- r$data %>% u$extract(input[[variable2]]) %>% u$filter_by_date(get_dates("2"))
+    variable1 <- get_deviated_variable("1")
+    variable2 <- get_deviated_variable("2")
+    d1 <- r$data %>% u$extract(variable1) %>% u$filter_by_date(get_dates("1"))
+    d2 <- r$data %>% u$extract(variable2) %>% u$filter_by_date(get_dates("2"))
     plot <- p$plot_two(input$plot_type)
     
     plot(d1, d2)

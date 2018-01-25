@@ -1,15 +1,8 @@
 library(tidyverse)
 library(lubridate)
-
-# ------------------- #
-# Read converted data #
-# --------------------#
-
-# Read expanded data with no mangled columns (not ordered)
-data <- read_csv("data/converted_data.csv")
-
-# Read decomposed column data (with no values)
-column_data <- read_csv("data/decomposition.csv")
+library(data.tree)
+library(treemap)
+library(yaml)
 
 # ------------------------------- #
 # Read, process, and convert data #
@@ -17,7 +10,15 @@ column_data <- read_csv("data/decomposition.csv")
 
 # Regenerate data (WARNING: May take a long time!)
 regenerate <- function(data_csv = "data/deviation_data.csv") {
+  # Decompose columns
   decompose_columns(data_csv, "data/decomposition.csv")
+  
+  # Column yaml file
+  column_data <- read_csv("data/decomposition.csv")
+  tree <- to_tree(column_data)
+  write_tree(tree, "data/columns.yaml")
+  
+  # Expand data
   convert(data_csv)
 }
 
@@ -141,3 +142,52 @@ decompose_columns <- function(data_csv = "data/deviation_data.csv", output_file 
   
   col_names %>% sapply(function(x) parse_column_name(x)) %>% bind_rows() %>% write.csv(output_file, row.names = FALSE)
 }
+
+# ---------------- #
+# Columns as Trees #
+# ---------------- #
+
+# Convert columns to a tree
+to_tree <- function(columns) {
+  stopifnot(is.data.frame(columns))
+  
+  columns <- columns %>%
+    select(unit, d_1, deviated_variable, measure) %>%
+    # Remove "base" rows
+    filter(!is.na(deviated_variable)) %>%
+    # Remove prefix from dev var names e.g. "turb.one" -> "turb"
+    mutate(stripped_dev_var = str_replace(deviated_variable, "^.*?\\.", ""))
+  
+  if (nrow(columns) == 0) {
+    stop("Can't make tree: 0 rows after filtering")
+  }
+  
+  columns$pathString <- paste("market",
+                            columns$unit,
+                            columns$d_1,
+                            columns$stripped_dev_var,
+                            columns$measure,
+                            sep = "/")
+
+  as.Node(columns)
+}
+
+# Write a column-tree as a yaml file
+write_tree <- function(tree, filename = "data/columns.yaml") {
+  stopifnot(isRoot(tree))
+  
+  write_yaml(ToListSimple(tree), filename)
+}
+
+# Read a column-tree from a yaml file
+read_tree <- function(filename = "data/columns.yaml") {
+  as.Node(yaml.load_file(filename))
+}
+
+# ------------------- #
+# Read converted data #
+# --------------------#
+
+data <- read_csv("data/converted_data.csv")
+column_data <- read_csv("data/decomposition.csv")
+tree <- read_tree("data/columns.yaml")
