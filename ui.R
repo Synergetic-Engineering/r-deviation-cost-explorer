@@ -10,7 +10,6 @@ ui <- shinyUI(fluidPage(
         uiOutput('d11'),
         uiOutput('deviated_variable1'),
         uiOutput('measure1')
-        # TODO: Incorporate deviated_variable
       )),
     column(6,
       wellPanel(
@@ -18,7 +17,6 @@ ui <- shinyUI(fluidPage(
          uiOutput('d12'),
          uiOutput('deviated_variable2'),
          uiOutput('measure2')
-         # TODO: Incorporate deviated_variable
       ))
   ),
   

@@ -5,7 +5,14 @@ server <- shinyServer(function(input, output, session) {
   # Return input/output names of a given plot as a list with
   # plot, plot_brush, variable, status and input selectors.
   # Given an id.
+  # 
+  # Example usage:
+  # output[[names(1)$plot]]
+  #
   names <- function(id) {
+    stopifnot(is.character(id))
+    stopifnot(length(id) == 1)
+    
     name_of <- function(el) { paste0(el, id) }
     return(list(plot = name_of("plot"),
                 plot_brush = name_of("plot_brush"),
@@ -24,6 +31,9 @@ server <- shinyServer(function(input, output, session) {
   
   # Get date range as a vector pair: c(<start>, <end>)
   get_dates <- function(id) {
+    stopifnot(is.character(id))
+    stopifnot(length(id) == 1)
+    
     plot_brush <- names(id)$plot_brush
     toDate <- function(d) {
       d %>% as.numeric() %>% as_datetime()
@@ -37,6 +47,9 @@ server <- shinyServer(function(input, output, session) {
   
   # Get deviated variable (with d1 suffix) as a string from selectors
   get_deviated_variable <- function(id) {
+    stopifnot(is.character(id))
+    stopifnot(length(id) == 1)
+    
     d1 <- input[[names(id)$selectors$d1]]
     dev_var <- input[[names(id)$selectors$deviated_variable]]
     
@@ -45,12 +58,26 @@ server <- shinyServer(function(input, output, session) {
     return(deviated_variable)
   }
   
+  # Get measure as a string from selectors
+  get_measure <- function(id) {
+    stopifnot(is.character(id))
+    stopifnot(length(id) == 1)
+    
+    measure <- input[[names(id)$selectors$measure]]
+    
+    return(measure)
+  }
+  
   # Calculate average over selection
   calc_average <- function(id) {
+    stopifnot(is.character(id))
+    stopifnot(length(id) == 1)
+    
     variable <- get_deviated_variable(id)
+    measure <- get_measure(id)
     
     r$data %>%
-      u$extract(variable) %>%
+      u$extract(variable, measure) %>%
       u$filter_by_date(get_dates(id)) %>%
       u$get_average_cost() %>%
       return()
@@ -58,10 +85,15 @@ server <- shinyServer(function(input, output, session) {
   
   # Register a plot + variable + selector input/outputs
   register <- function(id, color) {
+    stopifnot(is.character(id))
+    stopifnot(length(id) == 1)
+    stopifnot(is.character(color))
+    stopifnot(length(color) == 1)
+    
     io <- names(id)
     sel <- io$selectors
     
-    # Deviated variable selection
+    # Deviated variable dropdown box selection
     output[[sel$unit]] = renderUI({
       selectInput(sel$unit, 'Unit', u$get_childen_names(r$tree))
     })
@@ -97,7 +129,8 @@ server <- shinyServer(function(input, output, session) {
     # Plotting
     output[[io$plot]] <- renderPlot({
       # Extract deviated cost data for given variable
-      variable_data <- r$data %>% u$extract(get_deviated_variable(id))
+      variable_data <- r$data %>%
+        u$extract(get_deviated_variable(id), get_measure(id))
       
       # Call chosen plotting function from input
       plot <- p$plot_one(input$plot_type)
@@ -134,8 +167,10 @@ server <- shinyServer(function(input, output, session) {
   output$reference_plot <- renderPlot({
     variable1 <- get_deviated_variable("1")
     variable2 <- get_deviated_variable("2")
-    d1 <- r$data %>% u$extract(variable1) %>% u$filter_by_date(get_dates("1"))
-    d2 <- r$data %>% u$extract(variable2) %>% u$filter_by_date(get_dates("2"))
+    measure1 <- get_measure("1")
+    measure2 <- get_measure("2")
+    d1 <- r$data %>% u$extract(variable1, measure1) %>% u$filter_by_date(get_dates("1"))
+    d2 <- r$data %>% u$extract(variable2, measure2) %>% u$filter_by_date(get_dates("2"))
     plot <- p$plot_two(input$plot_type)
     
     plot(d1, d2)

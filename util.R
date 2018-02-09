@@ -7,10 +7,14 @@ library(lubridate)
 
 # Extract deviation variable table from data
 #
-# Given data, and a deviated variable (as a character), returns a table
-# containing `datetime`, `base_cost`, `deviated_cost`, `deviation_cost` for
-# that component.
-extract <- function(data, variable) {
+# Args:
+#   - data: data.frame    = Contains value, measure, step, deviated_variable
+#   - variable: string    = Name of component / deviated variable to extract
+#   - var_measure: string = Name of measure for base and deviated variable
+#
+# Returns a table containing `datetime`, `base_cost`, `deviated_cost`,
+# `deviation_cost` for given deviated variable and measure.
+extract <- function(data, variable, var_measure) {
   stopifnot(is.data.frame(data))
   stopifnot("value" %in% colnames(data))
   stopifnot("measure" %in% colnames(data))
@@ -18,6 +22,8 @@ extract <- function(data, variable) {
   stopifnot("deviated_variable" %in% colnames(data))
   stopifnot(is.character(variable))
   stopifnot(length(variable) == 1)
+  stopifnot(is.character(var_measure))
+  stopifnot(length(var_measure) == 1)
   
   if("unit" %in% colnames(data) & !length(unique(data$unit)) == 1) {
     stop("Can't handle multiple units")
@@ -27,17 +33,22 @@ extract <- function(data, variable) {
     stop(paste0("Variable not found: ", variable))
   }
   
-  COST_MEASURE <- 'blr.comb.c1in.massFlow.cost'
+  if(!var_measure %in% data[["measure"]]) {
+    stop(paste0("Measure not found: ", var_measure))
+  }
+  
+  BASE_STEP <- 'base'
+  DEVIATION_STEP <- 'deviation'
   
   # datetime, base_cost
   base_data <- data %>%
-    filter(measure == COST_MEASURE & step == 'base') %>%
+    filter(measure == var_measure & step == BASE_STEP) %>%
     select(datetime, value) %>%
     rename(base_cost = value)
   
   # datetime, deviated_cost
   variable_data <- data %>%
-    filter(measure == COST_MEASURE & step == 'deviation' &
+    filter(measure == var_measure & step == DEVIATION_STEP &
              deviated_variable == variable) %>%
     select(datetime, value) %>%
     rename(deviated_cost = value)
