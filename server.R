@@ -9,7 +9,7 @@ server <- shinyServer(function(input, output, session) {
   # Example usage:
   # output[[names(1)$plot]]
   #
-  # names :: String -> List
+  # names :: Id -> List
   names <- function(id) {
     stopifnot(is.character(id))
     stopifnot(length(id) == 1)
@@ -31,7 +31,7 @@ server <- shinyServer(function(input, output, session) {
   }
   
   # Get date range as a vector pair: c(<start>, <end>)
-  # get_dates :: String -> (Date, Date)
+  # get_dates :: Id -> (Date, Date)
   get_dates <- function(id) {
     stopifnot(is.character(id))
     stopifnot(length(id) == 1)
@@ -48,7 +48,7 @@ server <- shinyServer(function(input, output, session) {
   }
   
   # Get deviated variable (with d1 suffix) as a string from selectors
-  # get_deviated_variable :: String -> String
+  # get_deviated_variable :: Id -> String
   get_deviated_variable <- function(id) {
     stopifnot(is.character(id))
     stopifnot(length(id) == 1)
@@ -62,7 +62,7 @@ server <- shinyServer(function(input, output, session) {
   }
   
   # Get measure as a string from selectors
-  # get_measure :: String -> String
+  # get_measure :: Id -> String
   get_measure <- function(id) {
     stopifnot(is.character(id))
     stopifnot(length(id) == 1)
@@ -73,7 +73,7 @@ server <- shinyServer(function(input, output, session) {
   }
   
   # Calculate average over selection
-  # calc_average :: String -> Float
+  # calc_average :: Id -> Float
   calc_average <- function(id) {
     stopifnot(is.character(id))
     stopifnot(length(id) == 1)
@@ -89,7 +89,7 @@ server <- shinyServer(function(input, output, session) {
   }
   
   # Register a plot + variable + selector input/outputs
-  # register :: String -> String -> IO ()
+  # register :: Id -> String -> IO ()
   register <- function(id, color) {
     stopifnot(is.character(id))
     stopifnot(length(id) == 1)
@@ -101,7 +101,7 @@ server <- shinyServer(function(input, output, session) {
     
     # Deviated variable dropdown box selection
     output[[sel$unit]] = renderUI({
-      selectInput(sel$unit, 'Unit', u$get_childen_names(r$tree))
+      selectInput(sel$unit, 'Unit', u$get_children_names(r$tree))
     })
     
     output[[sel$d1]] = renderUI({
@@ -109,7 +109,7 @@ server <- shinyServer(function(input, output, session) {
       
       if (!is.null(input[[sel$unit]])) {
         selectInput(sel$d1, 'D1 (component)',
-                    u$get_childen_names(
+                    u$get_children_names(
                       r$tree[[ input[[sel$unit]] ]]))
       }
     })
@@ -118,7 +118,7 @@ server <- shinyServer(function(input, output, session) {
       message("renderUI:deviated variable")
       if (!is.null(input[[sel$d1]])) {
         selectInput(sel$deviated_variable, 'Deviated Variable',
-                    u$get_childen_names(
+                    u$get_children_names(
                       r$tree[[ input[[sel$unit]] ]][[ input[[sel$d1]] ]]))
       }
     })
@@ -127,10 +127,12 @@ server <- shinyServer(function(input, output, session) {
       message("renderUI:measure")
       if (!is.null(input[[sel$deviated_variable]])) {
         selectInput(sel$measure, 'Measure',
-                    u$get_childen_names(
+                    u$get_children_names(
                       r$tree[[ input[[sel$unit]] ]][[ input[[sel$d1]] ]][[ input[[sel$deviated_variable]] ]]))
       }
     })
+    
+    # Output
     
     # Plotting
     output[[io$plot]] <- renderPlot({
@@ -196,7 +198,7 @@ server <- shinyServer(function(input, output, session) {
   DUMMY_TIME <- ymd_hms("1970-01-01 00:00:00")
   DUMMY_RANGE <- c(DUMMY_TIME, DUMMY_TIME)
   
-  # values_RV :: Reactive (List, Table)
+  # values_RV :: Reactive (List, Bool, Table)
   values_RV <- reactiveValues(
     va = list(DUMMY_RANGE, DUMMY_RANGE),
     selector_toggle = FALSE,
@@ -224,6 +226,7 @@ server <- shinyServer(function(input, output, session) {
       
       values_RV$selector_toggle <- !toggle
       values_RV$va <- ranges
+      
     }
   })
   
@@ -235,7 +238,7 @@ server <- shinyServer(function(input, output, session) {
   })
   
   
-  # Update timeline with time selections
+  # Timeline plot
   output$timeline_plot <- renderPlot({
     plot <- p$plot_timeline(input$plot_type)
 
@@ -244,7 +247,19 @@ server <- shinyServer(function(input, output, session) {
     date_ranges <- values_RV$va
     variable_data <- values_RV$data
     
+    # The plot looks nicer when there is no blue rectangle obscuring the selection
+    session$resetBrush("timeline_brush")
+    
     plot(variable_data, date_ranges[[1]], date_ranges[[2]])
+  })
+  
+  # Comparative plot
+  output$single_comparison_plot <- renderPlot({
+    d1 <- values_RV$data %>%u$filter_by_date(values_RV$va[[1]])
+    d2 <- values_RV$data %>% u$filter_by_date(values_RV$va[[2]])
+    plot <- p$plot_two(input$plot_type)
+    
+    plot(d1, d2)
   })
   
 })

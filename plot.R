@@ -47,10 +47,10 @@ plot_deviation_selection <- function(data, range1, range2) {
     # Date range highlights
     geom_rect(xmin = range1[1], xmax = range1[2],
               ymin = -Inf, ymax = Inf, alpha = ALPHA,
-              fill = "blue")  +
+              fill = "red")  +
     geom_rect(xmin = range2[1], xmax = range2[2],
               ymin = -Inf, ymax = Inf, alpha = ALPHA,
-              fill = "red")
+              fill = "blue")
 }
 
 # Fill data up to n rows with NAs

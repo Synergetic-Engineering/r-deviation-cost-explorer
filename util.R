@@ -151,7 +151,7 @@ filter_by_date <- function(variable_data, dates) {
 
 # Function: get_children_names --> returns the names of the direct decendants for the given node
 # get_children_names :: Tree a -> [String]
-get_childen_names <- function(tree) {
+get_children_names <- function(tree) {
   n <- tree$count
   if(is.null(n)) 
     return(NULL)

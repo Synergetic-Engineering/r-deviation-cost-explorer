@@ -54,7 +54,6 @@ ui <- shinyUI(fluidPage(
                    )
             ),
             tabPanel("Across Time",
-                     # TODO
                      fluidRow(
                        wellPanel(
                          plotOutput("single_comparison_plot")
