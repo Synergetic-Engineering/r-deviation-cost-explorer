@@ -9,6 +9,7 @@ library(yaml)
 # ------------------------------- #
 
 # Regenerate data (WARNING: May take a long time!)
+# regenerate :: FilePath -> IO ()
 regenerate <- function(data_csv = "data/deviation_data.csv") {
   # Decompose columns
   decompose_columns(data_csv, "data/decomposition.csv")
@@ -29,6 +30,8 @@ regenerate <- function(data_csv = "data/deviation_data.csv") {
 # frame with each key-value pair in its own column where the key is the column
 # name and the value is repeated across every row. Renames the original column
 # to "value".
+#
+# unpack :: Table -> Table
 unpack <- function(col) {
   if(!is.data.frame(col)) stop("col must be a data frame")
   if(!length(col) == 1) stop("Single column only")
@@ -60,6 +63,8 @@ unpack <- function(col) {
 #
 # Unpack() cost-related columns in the data so that they are tidy and
 # header names contain a single value.
+#
+# expand :: Table -> Table
 expand <- function(data) {
   stopifnot(is.data.frame(data))
   stopifnot("datetime" %in% colnames(data))
@@ -76,6 +81,8 @@ expand <- function(data) {
 # Clean and convert raw data (not pure!)
 #
 # Read data from specified csv file, convert it using expand(), and save it
+#
+# convert :: FilePath -> IO ()
 convert <- function(data_csv) {
   stopifnot(is.character(data_csv))
   
@@ -96,6 +103,8 @@ convert <- function(data_csv) {
 #   df: data frame with 2 columns: names & values
 #   meas_name: name of the measurement to be decomposed
 # return: data frame if measurement is found or NA
+#
+# parse_measure :: Table -> String -> String -> Maybe Table
 parse_measure <- function(df, name = "measure", prefix = "m") {
   m <- df$values[df$names == name]
   if(!identical(m, character(0))){
@@ -113,6 +122,8 @@ parse_measure <- function(df, name = "measure", prefix = "m") {
 #   new_name: new column name of returned data frame
 # Output: returns data frame with column of variables names and another column with their values 
 # Notes: the measure is also decomposed
+#
+# parse_column_name :: String -> Table
 parse_column_name <- function(col_name) {
   # split up parts separated by commas, then bits separated by '='
   parts <- unlist(strsplit(x = col_name, ","))
@@ -135,6 +146,8 @@ parse_column_name <- function(col_name) {
 }
 
 # Extract just the column names from the data and write to a csv (not pure!)
+#
+# decompose_columns :: FilePath -> FilePath -> IO ()
 decompose_columns <- function(data_csv = "data/deviation_data.csv", output_file = "data/decomposition.csv") {
   # read deviation data from file & extract list of column names
   dev_data <- read.csv2(data_csv, sep = ",", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE) 
@@ -148,6 +161,8 @@ decompose_columns <- function(data_csv = "data/deviation_data.csv", output_file 
 # ---------------- #
 
 # Convert columns to a tree
+#
+# to_tree :: Table -> Tree String
 to_tree <- function(columns) {
   stopifnot(is.data.frame(columns))
   
@@ -173,6 +188,7 @@ to_tree <- function(columns) {
 }
 
 # Write a column-tree as a yaml file
+# write_tree :: Tree a -> FilePath -> IO ()
 write_tree <- function(tree, filename = "data/columns.yaml") {
   stopifnot(isRoot(tree))
   
@@ -180,6 +196,7 @@ write_tree <- function(tree, filename = "data/columns.yaml") {
 }
 
 # Read a column-tree from a yaml file
+# read_tree :: FilePath -> IO Tree
 read_tree <- function(filename = "data/columns.yaml") {
   as.Node(yaml.load_file(filename))
 }

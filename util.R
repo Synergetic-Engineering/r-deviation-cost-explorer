@@ -14,6 +14,8 @@ library(lubridate)
 #
 # Returns a table containing `datetime`, `base_cost`, `deviated_cost`,
 # `deviation_cost` for given deviated variable and measure.
+#
+# extract :: Table -> String -> String -> Table
 extract <- function(data, variable, var_measure) {
   stopifnot(is.data.frame(data))
   stopifnot("value" %in% colnames(data))
@@ -66,6 +68,8 @@ extract <- function(data, variable, var_measure) {
 # Expects table with `base_cost` and `deviated_cost`.
 # Returns new table with `deviation_cost`.
 # Called by extract()
+#
+# process_dev :: Table -> Table
 process_dev <- function(variable_data) {
   stopifnot(is.data.frame(variable_data))
   stopifnot("base_cost" %in% colnames(variable_data))
@@ -82,6 +86,8 @@ process_dev <- function(variable_data) {
 #
 # Throw an error if table does not contain `base_cost`, `deviated_cost`,
 # `deviation_cost`, or `datetime`. Returns NULL.
+#
+# validate :: Table -> IO ()
 validate <- function(variable_data) {
   stopifnot(is.data.frame(variable_data))
   
@@ -99,6 +105,8 @@ validate <- function(variable_data) {
 # Get all deviated variable names from data
 #
 # Given data, returns a vector of unique deviated variable names
+#
+# get_variable_names :: Table -> [String]
 get_variable_names <- function(data) {
   stopifnot(is.data.frame(data))
   stopifnot("deviated_variable" %in% colnames(data))
@@ -113,6 +121,8 @@ get_variable_names <- function(data) {
 #
 # Assume given data has already been filtered by time period and variable.
 # Returns average deviation cost for data frame.
+#
+# get_average_cost :: Table -> Float
 get_average_cost <- function(variable_data) {
   stopifnot(is.data.frame(variable_data))
   stopifnot("deviation_cost" %in% colnames(variable_data))
@@ -125,6 +135,8 @@ get_average_cost <- function(variable_data) {
 #
 # Given data and a datetime pair c(date1, date2), remove rows
 # which are outside that time.
+#
+# filter_by_date :: Table -> (Date, Date) -> Table
 filter_by_date <- function(variable_data, dates) {
   stopifnot(is.data.frame(variable_data))
   stopifnot("datetime" %in% colnames(variable_data))
@@ -138,6 +150,7 @@ filter_by_date <- function(variable_data, dates) {
 # ---------------- #
 
 # Function: get_children_names --> returns the names of the direct decendants for the given node
+# get_children_names :: Tree a -> [String]
 get_childen_names <- function(tree) {
   n <- tree$count
   if(is.null(n)) 
