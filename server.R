@@ -9,6 +9,7 @@ server <- shinyServer(function(input, output, session) {
   # Example usage:
   # output[[names(1)$plot]]
   #
+  # names :: String -> List
   names <- function(id) {
     stopifnot(is.character(id))
     stopifnot(length(id) == 1)
@@ -30,15 +31,16 @@ server <- shinyServer(function(input, output, session) {
   }
   
   # Get date range as a vector pair: c(<start>, <end>)
+  # get_dates :: String -> (Date, Date)
   get_dates <- function(id) {
     stopifnot(is.character(id))
     stopifnot(length(id) == 1)
     
-    plot_brush <- names(id)$plot_brush
     toDate <- function(d) {
       d %>% as.numeric() %>% as_datetime()
     }
     
+    plot_brush <- names(id)$plot_brush    
     start_date <- toDate(input[[plot_brush]]$xmin)
     end_date <- toDate(input[[plot_brush]]$xmax)
     
@@ -46,6 +48,7 @@ server <- shinyServer(function(input, output, session) {
   }
   
   # Get deviated variable (with d1 suffix) as a string from selectors
+  # get_deviated_variable :: String -> String
   get_deviated_variable <- function(id) {
     stopifnot(is.character(id))
     stopifnot(length(id) == 1)
@@ -59,6 +62,7 @@ server <- shinyServer(function(input, output, session) {
   }
   
   # Get measure as a string from selectors
+  # get_measure :: String -> String
   get_measure <- function(id) {
     stopifnot(is.character(id))
     stopifnot(length(id) == 1)
@@ -69,6 +73,7 @@ server <- shinyServer(function(input, output, session) {
   }
   
   # Calculate average over selection
+  # calc_average :: String -> Float
   calc_average <- function(id) {
     stopifnot(is.character(id))
     stopifnot(length(id) == 1)
@@ -84,6 +89,7 @@ server <- shinyServer(function(input, output, session) {
   }
   
   # Register a plot + variable + selector input/outputs
+  # register :: String -> String -> IO ()
   register <- function(id, color) {
     stopifnot(is.character(id))
     stopifnot(length(id) == 1)
@@ -153,7 +159,9 @@ server <- shinyServer(function(input, output, session) {
     })
   }
   
-
+  # ----------------- #
+  # Two Component Tab #
+  # ----------------- #
   
   register("1", "red")
   register("2", "blue")
@@ -164,6 +172,7 @@ server <- shinyServer(function(input, output, session) {
     calc_average("2")
   })
   
+  # Plotting for reference plot
   output$reference_plot <- renderPlot({
     variable1 <- get_deviated_variable("1")
     variable2 <- get_deviated_variable("2")
@@ -178,6 +187,64 @@ server <- shinyServer(function(input, output, session) {
   
   output$comparison <- renderText({
     paste0("Difference of Average Costs: ", avg_cost1() - avg_cost2())
+  })
+  
+  #----------------------#
+  # Single Component tab #
+  #----------------------#
+  
+  DUMMY_TIME <- ymd_hms("1970-01-01 00:00:00")
+  DUMMY_RANGE <- c(DUMMY_TIME, DUMMY_TIME)
+  
+  # values_RV :: Reactive (List, Table)
+  values_RV <- reactiveValues(
+    va = list(DUMMY_RANGE, DUMMY_RANGE),
+    selector_toggle = FALSE,
+    data = list(NULL))
+  
+  # Event updates `values_RV$va` with date ranges based on plot brush
+  observeEvent(input[["timeline_brush"]], {
+    # Get the dates from the timeline plot
+    toDate <- function(d) { d %>% as.numeric() %>% as_datetime() }
+    brush <- input[["timeline_brush"]]
+    date_range <- c(toDate(brush$xmin), toDate(brush$xmax))
+    
+    # Append new date range to list of date range selections, keeping the two
+    # most recent, and swapping their order every second selection to keep colours
+    if (!is.null(brush)) {
+      toggle <- values_RV$selector_toggle
+      ranges <- values_RV$va
+      if (!toggle) {
+        ranges <- rev(ranges)
+      }
+      ranges <- c(list(date_range), ranges)[1:2]
+      if (toggle) {
+        ranges <- rev(ranges)
+      }
+      
+      values_RV$selector_toggle <- !toggle
+      values_RV$va <- ranges
+    }
+  })
+  
+  # Reactive that updates `values_RV$data` with variable data based on selected variables
+  variable_data_RE <- reactive({
+    # Extract deviated cost data for FIRST variable
+    values_RV$data <- r$data %>%
+      u$extract(get_deviated_variable("1"), get_measure("1"))
+  })
+  
+  
+  # Update timeline with time selections
+  output$timeline_plot <- renderPlot({
+    plot <- p$plot_timeline(input$plot_type)
+
+    variable_data_RE()
+    
+    date_ranges <- values_RV$va
+    variable_data <- values_RV$data
+    
+    plot(variable_data, date_ranges[[1]], date_ranges[[2]])
   })
   
 })

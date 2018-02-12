@@ -8,11 +8,14 @@ validate <- u$validate
 # Plotting functions #
 # ------------------ #
 
+# condenser_example :: IO ()
 condenser_example <- function() {
   data %>% extract("turb.cond.thermalConductance.target") %>% plot_bars_cmp()
 }
 
 # Plot deviation cost
+
+# plot_deviation :: Table -> String -> IO ()
 plot_deviation <- function(data, color) {
   validate(data)
   stopifnot(is.character(color))
@@ -21,8 +24,38 @@ plot_deviation <- function(data, color) {
     geom_line(mapping = aes(x = datetime, y = deviation_cost), color = color)
 }
 
+# Plot deviation with two date ranges highlighted
+# Inputs:
+#  - data: validate()'d data frame with `datetime` and `deviation_cost`
+#  - range1: Two element vector with start datetime and end datetime
+#  - range2: As above
+# Outputs:
+#  - NULL
+# Side Effects:
+#  - Plot
+
+# plot_deviation_selection :: Table -> (Date, Date) -> (Date, Date) -> IO ()
+plot_deviation_selection <- function(data, range1, range2) {
+  validate(data)
+  stopifnot(is.timepoint(range1) && length(range1) == 2)
+  stopifnot(is.timepoint(range2) && length(range2) == 2)
+  
+  ALPHA <- 0.002
+  
+  ggplot(data = data) +
+    geom_line(mapping = aes(x = datetime, y = deviation_cost)) +
+    # Date range highlights
+    geom_rect(xmin = range1[1], xmax = range1[2],
+              ymin = -Inf, ymax = Inf, alpha = ALPHA,
+              fill = "blue")  +
+    geom_rect(xmin = range2[1], xmax = range2[2],
+              ymin = -Inf, ymax = Inf, alpha = ALPHA,
+              fill = "red")
+}
+
 # Fill data up to n rows with NAs
 # If n is less than the number of rows in the data, just returns the data
+# fill :: Table -> Integer -> Table
 fill <- function(variable_data, n) {
   validate(variable_data)
   stopifnot(is.numeric(n))
@@ -39,6 +72,7 @@ fill <- function(variable_data, n) {
 }
 
 # Plot deviation cost for two datasets, joined on time
+# plot_deviation_two :: Table -> Table -> IO ()
 plot_deviation_two <- function(data1, data2) {
   validate(data1)
   validate(data2)
@@ -79,6 +113,7 @@ plot_deviation_two <- function(data1, data2) {
 }
 
 # Plot deviated cost and baseline cost together
+# plot_deviated_baseline :: Table -> IO ()
 plot_deviated_baseline <- function(data) {
   validate(data)
   
@@ -138,6 +173,8 @@ plot_bars_cmp <- function(data) {
     labs(x = "day", y = "cost difference", title = "Cost Average Difference vs. Day")
 }
 
+# Plot two bar charts in one graph with given colors
+# plot_bars_cmp_two :: Table -> Table -> (String, String) -> IO ()
 plot_bars_cmp_two <- function(variable1, variable2, colors = c("red", "blue")) {
   validate(variable1)
   validate(variable2)
@@ -184,7 +221,8 @@ plot_bars_cmp_two <- function(variable1, variable2, colors = c("red", "blue")) {
 registry <- list(
   "line_chart" = list(
     "singular" = plot_deviation,
-    "comparative" = plot_deviation_two
+    "comparative" = plot_deviation_two,
+    "timeline" = plot_deviation_selection
   ),
   "bar_chart" = list(
     "singular" = plot_bars_cmp,
@@ -193,11 +231,19 @@ registry <- list(
 )
 
 # Get plotting function of one variable from plot registry
+# plot_one :: String -> Registry -> (Table -> IO ())
 plot_one <- function(plot_name, plot_registry = registry) {
   plot_registry[[plot_name]]$singular
 }
 
 # Get plotting function of two variables from plot registry
+# plot_two :: String -> Registry -> (Table -> Table -> IO ())
 plot_two <- function(plot_name, plot_registry = registry) {
   plot_registry[[plot_name]]$comparative
+}
+
+# Get interactive timeline plotting function from plot registry
+# plot_timeline :: String -> Registry -> (Table -> IO ())
+plot_timeline <- function(plot_name, plot_registry = registry) {
+  plot_registry[[plot_name]]$timeline
 }

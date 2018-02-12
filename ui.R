@@ -28,28 +28,45 @@ ui <- shinyUI(fluidPage(
     )
   ),
   
-  fluidRow(
-    column(6,
-      plotOutput("plot1", brush = brushOpts("plot_brush1", direction = "x")),
-      wellPanel(textOutput("status1"))
-    ),
-    column(6,
-      plotOutput("plot2", brush = brushOpts("plot_brush2", direction = "x")),
-      wellPanel(textOutput("status2"))
-    )
-  ),
-  
-  fluidRow(
-    wellPanel(
-      plotOutput("reference_plot")
-    )
-  ),
-  
-  fluidRow(
-    wellPanel(
-      textOutput("comparison")
-    )
+  tabsetPanel(type = "tabs",
+              tabPanel("Across Components",
+                   fluidRow(
+                     column(6,
+                            plotOutput("plot1", brush = brushOpts("plot_brush1", direction = "x")),
+                            wellPanel(textOutput("status1"))
+                     ),
+                     column(6,
+                            plotOutput("plot2", brush = brushOpts("plot_brush2", direction = "x")),
+                            wellPanel(textOutput("status2"))
+                     )
+                   ),
+                   
+                   fluidRow(
+                     wellPanel(
+                       plotOutput("reference_plot")
+                     )
+                   ),
+                   
+                   fluidRow(
+                     wellPanel(
+                       textOutput("comparison")
+                     )
+                   )
+            ),
+            tabPanel("Across Time",
+                     # TODO
+                     fluidRow(
+                       wellPanel(
+                         plotOutput("single_comparison_plot")
+                       )
+                     ),
+                     fluidRow(
+                       wellPanel(
+                         plotOutput("timeline_plot",
+                                    brush = brushOpts("timeline_brush", direction = "x"))
+                       )
+                     )
+            )
   )
-  
-)
-)
+
+))
