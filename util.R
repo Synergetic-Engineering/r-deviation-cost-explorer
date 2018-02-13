@@ -1,5 +1,6 @@
 library(tidyverse)
 library(lubridate)
+library(data.tree)
 
 # ------------------------------------------ #
 # Utility functions for extracting from data #
@@ -152,8 +153,9 @@ filter_by_date <- function(variable_data, dates) {
 # Function: get_children_names --> returns the names of the direct decendants for the given node
 # get_children_names :: Tree a -> [String]
 get_children_names <- function(tree) {
+  stopifnot(is(tree, "Node"))
   n <- tree$count
-  if(is.null(n)) 
+  if(is.null(n))
     return(NULL)
   
   x <- sapply(1:n, function(x, y) y$children[[x]]$name, y = tree)

@@ -80,10 +80,17 @@ server <- shinyServer(function(input, output, session) {
     
     variable <- get_deviated_variable(id)
     measure <- get_measure(id)
+    date_range <- get_dates(id)
+    
+    # Can't give average if we don't know about the data
+    if (!(length(variable) > 0 && length(measure) > 0 &&
+          length(date_range) > 0)) {
+      return(NA)
+    }
     
     r$data %>%
       u$extract(variable, measure) %>%
-      u$filter_by_date(get_dates(id)) %>%
+      u$filter_by_date(date_range) %>%
       u$get_average_cost() %>%
       return()
   }
@@ -105,7 +112,6 @@ server <- shinyServer(function(input, output, session) {
     })
     
     output[[sel$d1]] = renderUI({
-      message("renderUI:d1")
       
       if (!is.null(input[[sel$unit]])) {
         selectInput(sel$d1, 'D1 (component)',
@@ -115,7 +121,6 @@ server <- shinyServer(function(input, output, session) {
     })
     
     output[[sel$deviated_variable]] = renderUI({
-      message("renderUI:deviated variable")
       if (!is.null(input[[sel$d1]])) {
         selectInput(sel$deviated_variable, 'Deviated Variable',
                     u$get_children_names(
@@ -123,19 +128,13 @@ server <- shinyServer(function(input, output, session) {
       }
     })
     
-    output[[sel$measure]] = renderUI({
-      message("renderUI:measure")
-      if (!is.null(input[[sel$deviated_variable]])) {
-        selectInput(sel$measure, 'Measure',
-                    u$get_children_names(
-                      r$tree[[ input[[sel$unit]] ]][[ input[[sel$d1]] ]][[ input[[sel$deviated_variable]] ]]))
-      }
-    })
-    
-    # Output
-    
     # Plotting
     output[[io$plot]] <- renderPlot({
+      # Avoid doing anything until all component info is available
+      if (!every(list(get_deviated_variable(id), get_measure(id)), ~ length(.) > 0)) {
+        return(NULL);
+      }
+      
       # Extract deviated cost data for given variable
       variable_data <- r$data %>%
         u$extract(get_deviated_variable(id), get_measure(id))
@@ -161,12 +160,49 @@ server <- shinyServer(function(input, output, session) {
     })
   }
   
+  # register_measures :: Id -> Id -> IO ()
+  register_measures <- function(id1, id2) {
+    
+    # get_measures :: Id -> Maybe [String]
+    get_measures <- function(id) {
+      sel <- names(id)$selectors
+      if (!is.null(input[[sel$deviated_variable]])) {
+        u$get_children_names(r$tree[[ input[[sel$unit]] ]][[ input[[sel$d1]] ]][[ input[[sel$deviated_variable]] ]])
+      }
+      else {
+        return(NULL)
+      }
+    }
+    
+    # register_measure_input :: Id -> [String] -> IO ()
+    register_measure_input <- function(id, measures) {
+      measure_selector <- names(id)$selectors$measure
+      dev_var_selector <- names(id)$selectors$deviated_variable
+      
+      output[[measure_selector]] = renderUI({
+        if (!is.null(input[[dev_var_selector]])) {
+          selectInput(measure_selector, 'Measure', measures)
+        }
+      })
+    }
+    
+    measures1 <- get_measures(id1)
+    measures2 <- get_measures(id2)
+    all_measures <- intersect(measures1, measures2)
+    
+    register_measure_input(id1, all_measures)
+    register_measure_input(id2, all_measures)
+  }
+  
   # ----------------- #
   # Two Component Tab #
   # ----------------- #
   
   register("1", "red")
   register("2", "blue")
+  # register_measures() is dependant on register() calls
+  measureObs <- observe({ register_measures("1", "2") })
+  
   avg_cost1 <- reactive({
     calc_average("1")
   })
@@ -180,11 +216,18 @@ server <- shinyServer(function(input, output, session) {
     variable2 <- get_deviated_variable("2")
     measure1 <- get_measure("1")
     measure2 <- get_measure("2")
-    d1 <- r$data %>% u$extract(variable1, measure1) %>% u$filter_by_date(get_dates("1"))
-    d2 <- r$data %>% u$extract(variable2, measure2) %>% u$filter_by_date(get_dates("2"))
-    plot <- p$plot_two(input$plot_type)
+    date_range1 <- get_dates("1")
+    date_range2 <- get_dates("2")
     
-    plot(d1, d2)
+    
+    if (every(list(measure1, measure2, variable1, variable2, date_range1, date_range2),
+              ~ length(.) > 0L)) {
+      d1 <- r$data %>% u$extract(variable1, measure1) %>% u$filter_by_date(date_range1)
+      d2 <- r$data %>% u$extract(variable2, measure2) %>% u$filter_by_date(date_range2)
+      plot <- p$plot_two(input$plot_type)
+      
+      return(plot(d1, d2))
+    }
   })
   
   output$comparison <- renderText({
