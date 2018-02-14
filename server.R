@@ -91,7 +91,7 @@ server <- shinyServer(function(input, output, session) {
     r$data %>%
       u$extract(variable, measure) %>%
       u$filter_by_date(date_range) %>%
-      u$get_average_cost() %>%
+      s$average_cost() %>%
       return()
   }
   
@@ -226,7 +226,10 @@ server <- shinyServer(function(input, output, session) {
       d2 <- r$data %>% u$extract(variable2, measure2) %>% u$filter_by_date(date_range2)
       plot <- p$plot_two(input$plot_type)
       
-      return(plot(d1, d2))
+      return(plot(d1, d2) + s$aggregated_cost_two_legend(d1, d2))
+    }
+    else {
+      return(p$plot_text("(Waiting for selections)"))
     }
   })
   
@@ -298,11 +301,16 @@ server <- shinyServer(function(input, output, session) {
   
   # Comparative plot
   output$single_comparison_plot <- renderPlot({
-    d1 <- values_RV$data %>%u$filter_by_date(values_RV$va[[1]])
+    d1 <- values_RV$data %>% u$filter_by_date(values_RV$va[[1]])
     d2 <- values_RV$data %>% u$filter_by_date(values_RV$va[[2]])
     plot <- p$plot_two(input$plot_type)
     
-    plot(d1, d2)
+    if (nrow(d1) > 0 && nrow(d2) > 0) {
+      return(plot(d1, d2) + s$aggregated_cost_two_legend(d1, d2))
+    }
+    else {
+      return(p$plot_text("(Awaiting two timeline selections)"))
+    }
   })
   
 })

@@ -118,20 +118,6 @@ get_variable_names <- function(data) {
     return()
 }
 
-# Get average deviation cost from data
-#
-# Assume given data has already been filtered by time period and variable.
-# Returns average deviation cost for data frame.
-#
-# get_average_cost :: Table -> Float
-get_average_cost <- function(variable_data) {
-  stopifnot(is.data.frame(variable_data))
-  stopifnot("deviation_cost" %in% colnames(variable_data))
-  stopifnot(is.numeric(variable_data$deviation_cost))
-  
-  return(mean(variable_data[["deviation_cost"]], na.rm = TRUE))
-}
-
 # Filter by date
 #
 # Given data and a datetime pair c(date1, date2), remove rows

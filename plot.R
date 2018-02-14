@@ -107,8 +107,8 @@ plot_deviation_two <- function(data1, data2) {
   combined_data <- bind_cols(data1, data2)
   
   ggplot(data = combined_data) +
-    geom_line(mapping = aes(x = datetime, y = deviation_cost.x), colour = "red") +
-    geom_line(mapping = aes(x = datetime, y = deviation_cost.y), colour = "blue") +
+    geom_line(mapping = aes(x = datetime, y = deviation_cost.x, colour = "a")) +
+    geom_line(mapping = aes(x = datetime, y = deviation_cost.y, colour = "b")) +
     labs(y = "deviation cost")
 }
 
@@ -210,6 +210,17 @@ plot_bars_cmp_two <- function(variable1, variable2, colors = c("red", "blue")) {
     guides(fill = "none") +
     scale_x_datetime(date_breaks = "2 days", labels = partial(format, format = "%Y-%m-%d")) +
     labs(x = "day", y = "cost difference", title = "Cost Average Difference vs. Day")
+}
+
+# Plot an empty graph with the given text displayed in the middle
+#
+# plot_text :: String -> IO ()
+plot_text <- function(text) {
+  stopifnot(is.character(text))
+  
+  ggplot() +
+    annotate("text", x = 0, y = 0,
+             label = text, size = 8)
 }
 
 # ------------- #
